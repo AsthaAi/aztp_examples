@@ -1,0 +1,29 @@
+{
+  "name": "blog_ts",
+  "version": "1.0.0",
+  "description": "Blog generation system using OpenAI and AZTP security",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "ts-node src/main.ts"
+  },
+  "keywords": [
+    "blog",
+    "ai",
+    "security",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^20.11.16",
+    "aztp-client": "^1.0.0",
+    "dotenv": "^16.4.1",
+    "openai": "^4.26.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

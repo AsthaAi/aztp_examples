@@ -1,0 +1,8 @@
+# Core dependencies
+crewai>=0.1.0
+python-dotenv>=1.0.0
+openai>=1.0.0
+aztp-client>=1.0.0
+
+# Additional utilities
+python-slugify>=8.0.0  # For creating blog file names 
