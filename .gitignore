@@ -1,0 +1,8 @@
+blog_python/output/blogs/*
+blog_python/.env
+blog_python/venv
+
+blog_ts/package-lock.json
+blog_ts/node_modules
+blog_ts/dist
+blog_ts/.env
