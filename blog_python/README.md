@@ -27,8 +27,9 @@ A secure multi-agent system that generates blog posts using OpenAI and AZTP secu
 
 1. Create a virtual environment (recommended):
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+cd blog_python
+python -m venv <your-env-name>
+source <your-env-name>/bin/activate  # On Windows: <your-env-name>\Scripts\activate
 ```
 
 2. Install dependencies:
