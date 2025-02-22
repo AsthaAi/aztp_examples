@@ -31,12 +31,12 @@ async function main() {
         // Secure the agents with AZTP
         console.log('Securing research agent...');
         const securedResearch = await client.secureConnect(researchAgent, {
-            name: "research-assistant"
+            name: "fancy-research-agent"
         });
         
         console.log('Securing blog agent...');
         const securedBlog = await client.secureConnect(blogAgent, {
-            name: "blog-writer"
+            name: "fancy-blog-agent"
         });
 
         // Verify agents

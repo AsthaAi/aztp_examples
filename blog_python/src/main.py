@@ -42,11 +42,14 @@ def save_blog(blog_data: Dict[str, Any], topic: str) -> str:
     logger.info(f"Blog saved to {filename}")
     return filename
 
-async def verify_agent(client: Aztp, agent: Any, agent_type: str) -> bool:
+async def verify_agent(client: Aztp, agent: Any, agent_type: str, agent_name: str) -> bool:
     """Verify agent identity."""
     try:
-        is_valid = await client.verify_identity(agent)
-        if is_valid:
+        is_valid = await client.verify_identity(agent) 
+        is_identity_name_valid = await client.verify_identity_using_agent_name(agent_name)
+        print(f"is_valid: {is_valid}")
+        print(f"is_identity_name_valid: {is_identity_name_valid}")
+        if is_valid and is_identity_name_valid:
             identity = await client.get_identity(agent)
             logger.info(f"{agent_type} Identity verified: {identity}")
             return True
@@ -61,7 +64,7 @@ async def cleanup_resources(client: Aztp, *agents: Any) -> None:
     for agent in agents:
         try:
             if hasattr(agent, 'disconnect'):
-                await agent.disconnect()
+                await agent.disconnect() # where is the disconnect method? is that part of the crewai library?
         except Exception as e:
             logger.warning(f"Cleanup failed for agent: {str(e)}")
 
@@ -78,7 +81,6 @@ async def main() -> None:
         # Initialize AZTP client
         client = Aztp(
             api_key=env['aztp_key'],
-            environment=env['aztp_env']
         )
         
         logger.info("Initializing agents...")
@@ -90,18 +92,18 @@ async def main() -> None:
         try:
             secured_research = await client.secure_connect(
                 research_agent,
-                name="research-assistant"
+                name="research-assistant-a"
             )
             secured_blog = await client.secure_connect(
                 blog_agent,
-                name="blog-writer"
+                name="blog-writer-a"
             )
         except Exception as e:
             raise Exception(f"Failed to secure agents: {str(e)}")
         
         # Verify agents
-        research_valid = await verify_agent(client, secured_research, "Research")
-        blog_valid = await verify_agent(client, secured_blog, "Blog")
+        research_valid = await verify_agent(client, secured_research, "Research", "research-assistant-a")
+        blog_valid = await verify_agent(client, secured_blog, "Blog", "blog-writer-a")
         
         if not (research_valid and blog_valid):
             raise ValueError("Agent verification failed - check agent identities and permissions")
