@@ -1,12 +1,13 @@
-import * as dotenv from 'dotenv';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+/// <reference types="node" />
+import { config } from 'dotenv';
+import { mkdir, writeFile } from 'fs/promises';
+import { join } from 'path';
 import aztp from 'aztp-client';
 import { ResearchAgent } from './agents/research-agent';
 import { BlogAgent } from './agents/blog-agent';
 
 // Load environment variables
-dotenv.config();
+config();
 
 async function main() {
     try {
@@ -29,39 +30,44 @@ async function main() {
         const blogAgent = new BlogAgent(openaiApiKey);
 
         // Constants
-        const globalAgentName = "daily-blogs-agent-02";
-        const trustDomain = "agentsfounders.club";
-        const researchAgentName = "research-agent-02";
+        const trustDomain = "astha.ai";  // Trust domain for non-global identities
 
-        // Secure the agents with AZTP
-
+        // Secure the blog agent with global identity (no trust domain needed)
         console.log('Securing blog agent...');
         const securedBlog = await client.secureConnect(blogAgent, {
-            agentName: globalAgentName,
+            agentName: "blog-writer-1",
             isGlobalIdentity: true
         });
+        console.log('Blog agent created:', securedBlog.identity.aztpId);
 
+        // Secure the research agent as child with explicit trust domain
         console.log('Securing research agent...');
         const securedResearch = await client.secureConnect(researchAgent, {
-            agentName: researchAgentName,
+            agentName: "research-assistant-1",
             parentIdentity: securedBlog.identity.aztpId,
-            // trustDomain: trustDomain,
-            isGlobalIdentity: false
+            trustDomain: trustDomain,
+            isGlobalIdentity: false,
+            workload: "production",
+            environment: "production"
         });
+        console.log('Research agent created:', securedResearch.identity.aztpId);
 
-
-        // Verify agents
+        // Verify agents using direct verification
         console.log('\nVerifying research agent...');
         const researchValid = await client.verifyIdentity(securedResearch);
         console.log('Research Agent Identity Valid:', researchValid);
-        const researchIdentity = await client.getIdentity(securedResearch);
-        console.log('Research Agent Identity:', researchIdentity);
+        if (researchValid) {
+            const researchIdentity = await client.getIdentity(securedResearch);
+            console.log('Research Agent Identity:', researchIdentity);
+        }
 
         console.log('\nVerifying blog agent...');
         const blogValid = await client.verifyIdentity(securedBlog);
         console.log('Blog Agent Identity Valid:', blogValid);
-        const blogIdentity = await client.getIdentity(securedBlog);
-        console.log('Blog Agent Identity:', blogIdentity);
+        if (blogValid) {
+            const blogIdentity = await client.getIdentity(securedBlog);
+            console.log('Blog Agent Identity:', blogIdentity);
+        }
 
         if (!(researchValid && blogValid)) {
             throw new Error("Agent verification failed");
@@ -81,13 +87,13 @@ async function main() {
         console.log(`Blog created: ${blogData.metadata.timestamp}`);
 
         // Save blog post
-        const outputDir = path.join(process.cwd(), 'output', 'blogs');
-        await fs.mkdir(outputDir, { recursive: true });
+        const outputDir = join(process.cwd(), 'output', 'blogs');
+        await mkdir(outputDir, { recursive: true });
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = path.join(outputDir, `blog_${timestamp}.md`);
+        const filename = join(outputDir, `blog_${timestamp}.md`);
 
-        await fs.writeFile(filename, blogData.content);
+        await writeFile(filename, blogData.content);
         console.log(`\nBlog saved to: ${filename}`);
 
     } catch (error) {

@@ -1,12 +1,9 @@
-# Blog Generation System (Python)
+# AZTP Blog Generation Example (Python)
 
-A secure multi-agent system that generates blog posts using OpenAI and AZTP security. This example demonstrates how to:
-- Create and secure multiple AI agents
-- Implement secure agent-to-agent communication
-- Verify agent identities
-- Handle secure data flow
+This example demonstrates how to use the AZTP (Agentic Zero Trust Protocol) to create a secure blog generation system with multiple collaborating agents.
 
-## Architecture
+## Project Overview
+
 
 ```
 ┌──────────────┐                              ┌──────────────┐
@@ -16,89 +13,117 @@ A secure multi-agent system that generates blog posts using OpenAI and AZTP secu
 │  (OpenAI)    │         (AZTP)              │  (OpenAI)    │
 └──────────────┘                              └──────────────┘
 ```
+The project implements a secure blog generation system using two main agents:
+- **Blog Agent** (Global Identity): Responsible for creating and formatting blog posts
+- **Research Agent** (Child Identity): Handles research and data gathering for blog topics
+
+Both agents are secured using AZTP's identity and trust mechanisms, demonstrating proper hierarchical identity management and secure agent collaboration.
 
 ## Prerequisites
 
-- Python >= 3.8
-- OpenAI API key
-- AZTP API key (get one at [astha.ai](https://astha.ai))
+- Python 3.8+
+- Virtual environment (recommended)
+- AZTP API Key
+- OpenAI API Key
 
-## Setup
+## Installation
 
-1. Create a virtual environment (recommended):
+1. Clone the repository and navigate to the project directory:
 ```bash
-cd blog_python
-python -m venv <your-env-name>
-source <your-env-name>/bin/activate  # On Windows: <your-env-name>\Scripts\activate
+cd aztp_examples/blog_python
 ```
 
-2. Install dependencies:
+2. Create and activate a virtual environment:
+```bash
+python -m venv blog-env
+source blog-env/bin/activate  # On Windows: blog-env\Scripts\activate
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Create `.env` file:
+## Configuration
+
+1. Create a `.env` file in the project root with the following variables:
 ```env
-# OpenAI API Key
-OPENAI_API_KEY=your_openai_key_here
-
-# AZTP Configuration
-AZTP_API_KEY=your_aztp_key_here
+OPENAI_API_KEY=your_openai_api_key
+AZTP_API_KEY=your_aztp_api_key
+AZTP_ENVIRONMENT=production
 ```
 
-## Running the Example
+## AZTP Integration Guide
 
-1. Make sure your virtual environment is activated
-2. Run the main script:
-```bash
-python src/main.py
-```
+### Initializing AZTP Client
 
-## Implementation Details
-
-### 1. Initialize AZTP Client
 ```python
-import aztp_client as aztp
+from aztp_client import Aztp
 
-client = aztp.initialize({
-    'api_key': os.getenv('AZTP_API_KEY')
-})
+client = Aztp(
+    api_key=env['aztp_key']
+)
 ```
 
-### 2. Create and Secure Agents
+### Securing Agents with AZTP
+
+The `secure_connect` method is used to establish secure identities for agents. There are two main patterns:
+
+1. **Global Identity** (for root-level agents):
 ```python
-# Create base agents
-research_agent = ResearchAgent(openai_api_key)
-blog_agent = BlogAgent(openai_api_key)
-
-# Secure the agents
-secured_research = await client.secure_connect(research_agent, {
-    'name': "research-assistant"
-})
-
-secured_blog = await client.secure_connect(blog_agent, {
-    'name': "blog-writer"
-})
+# Blog agent as global identity
+secured_blog = await client.secure_connect(
+    blog_agent,
+    {
+        "agentName": "blog-writer-1",
+        "isGlobalIdentity": True  # Uses aztp.network as trust domain
+    }
+)
 ```
 
-### 3. Verify Agent Identities
+2. **Child Identity** (for agents under a trust domain):
 ```python
-# Verify both agents
-if not all([
-    await client.verify_identity(secured_research),
-    await client.verify_identity(secured_blog)
-]):
-    raise SecurityError("Agent identity verification failed")
+# Research agent as child with trust domain
+secured_research = await client.secure_connect(
+    research_agent,
+    {
+        "agentName": "research-assistant-1",
+        "parentIdentity": secured_blog.identity.aztp_id,  # Link to parent
+        "trustDomain": "astha.ai",  # Explicit trust domain
+        "isGlobalIdentity": False
+    }
+)
 ```
 
-### 4. Use Secured Agents
+### Verifying Agent Identities
+
+AZTP provides multiple methods for identity verification:
+
+1. **Direct Verification**:
 ```python
-# Research phase
-research_data = await secured_research.research(topic)
-
-# Blog writing phase
-blog_content = await secured_blog.create_blog(research_data)
+# Simplest and recommended method
+is_valid = await client.verify_identity(agent)
 ```
+
+2. **Identity Details**:
+```python
+# Get detailed identity information
+identity = await client.get_identity(agent)
+print(f"AZTP ID: {identity.aztpId}")
+print(f"Trust Domain: {identity.workloadInfo.trustDomain}")
+print(f"Status: {identity.status}")
+```
+
+### Understanding AZTP IDs
+
+AZTP IDs follow this format:
+```
+aztp://<trust_domain>/<agent_name>
+```
+
+Examples:
+- Global Identity: `aztp://blog-writer-1`
+- Domain Identity: `aztp://astha.ai/research-assistant-1`
 
 ## Project Structure
 
@@ -106,14 +131,55 @@ blog_content = await secured_blog.create_blog(research_data)
 blog_python/
 ├── src/
 │   ├── agents/
-│   │   ├── research_agent.py   # Research agent implementation
-│   │   └── blog_agent.py       # Blog agent implementation
-│   └── main.py                # Main orchestration
-├── requirements.txt
-└── README.md
+│   │   ├── blog_agent.py     # Blog writing agent
+│   │   └── research_agent.py # Research agent
+│   └── main.py              # Main application script
+├── output/
+│   └── blogs/               # Generated blog posts
+├── requirements.txt         # Project dependencies
+└── README.md               # This file
 ```
 
-## Security Features Demonstrated
+## Usage
+
+Run the main script:
+```bash
+python src/main.py
+```
+
+The script will:
+1. Initialize and secure both agents using AZTP
+2. Verify agent identities and trust relationships
+3. Research the specified topic
+4. Generate a blog post based on the research
+5. Save the blog post to the output directory
+
+## Security Features
+
+- **Global Identity**: Blog Agent uses a global identity under `aztp.network`
+- **Child Identity**: Research Agent operates under a specific trust domain with parent-child relationship
+- **Identity Verification**: Both agents' identities are verified before operation
+- **Trust Domain**: Proper trust domain separation and hierarchy
+- **Secure Communication**: All agent interactions are secured through AZTP
+
+### Identity Hierarchy
+
+```
+┌─────────────────────┐
+│    Blog Agent       │
+│  (Global Identity)  │
+│   aztp.network     │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│   Research Agent    │
+│   (Child Identity)  │
+│     astha.ai       │
+└─────────────────────┘
+```
+
+## Dependencies
 
 - 🔐 Agent identity management with SPIFFE
 - 🤝 Secure agent-to-agent communication
@@ -122,12 +188,32 @@ blog_python/
 
 ## Output
 
-The system generates blog posts in markdown format, saved in `output/blogs/` directory with timestamps.
+Generated blogs are saved in the `output/blogs/` directory with timestamps and topic-based filenames.
 
 ## Error Handling
 
-The example includes error handling for:
-- Missing API keys
-- Identity verification failures
-- Agent communication errors
-- File system operations 
+The system includes comprehensive error handling for:
+- Missing environment variables
+- Agent verification failures
+- Research and blog generation errors
+- File system operations
+
+### Common AZTP Errors
+
+1. **Invalid Trust Domain**:
+   - Ensure trust domains match the expected format
+   - Verify parent-child relationships are properly established
+
+2. **Identity Verification Failures**:
+   - Check if the agent was properly secured with `secure_connect`
+   - Verify the AZTP API key is valid
+   - Ensure the parent identity exists for child agents
+
+3. **Connection Issues**:
+   - Verify network connectivity
+   - Check AZTP service status
+   - Validate API key permissions
+
+## Contributing
+
+Feel free to submit issues and enhancement requests! 

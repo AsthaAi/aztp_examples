@@ -42,14 +42,11 @@ def save_blog(blog_data: Dict[str, Any], topic: str) -> str:
     logger.info(f"Blog saved to {filename}")
     return filename
 
-async def verify_agent(client: Aztp, agent: Any, agent_type: str, agent_name: str) -> bool:
-    """Verify agent identity."""
+async def verify_agent(client: Aztp, agent: Any, agent_type: str) -> bool:
+    """Verify agent identity using direct verification."""
     try:
-        is_valid = await client.verify_identity(agent) 
-        is_identity_name_valid = await client.verify_identity_using_agent_name(agent_name)
-        print(f"is_valid: {is_valid}")
-        print(f"is_identity_name_valid: {is_identity_name_valid}")
-        if is_valid and is_identity_name_valid:
+        is_valid = await client.verify_identity(agent)
+        if is_valid:
             identity = await client.get_identity(agent)
             logger.info(f"{agent_type} Identity verified: {identity}")
             return True
@@ -73,6 +70,7 @@ async def main() -> None:
     client = None
     secured_research = None
     secured_blog = None
+    trust_domain = 'astha.ai'  # Trust domain for non-global identities
     
     try:
         # Load environment variables
@@ -90,20 +88,32 @@ async def main() -> None:
         
         # Secure the agents with AZTP
         try:
-            secured_research = await client.secure_connect(
-                research_agent,
-                name="research-assistant-a"
-            )
+            # Blog agent as parent with global identity (no trust domain needed)
             secured_blog = await client.secure_connect(
                 blog_agent,
-                name="blog-writer-a"
+                {
+                    "agentName": "blog-writer-1",
+                    "isGlobalIdentity": True
+                }
+            )
+            
+            # Research agent as child with explicit trust domain
+            secured_research = await client.secure_connect(
+                research_agent,
+                {
+                    "agentName": "research-assistant-1",
+                    "parentIdentity": secured_blog.identity.aztp_id,
+                    "trustDomain": trust_domain,
+                    "isGlobalIdentity": False,
+
+                }
             )
         except Exception as e:
             raise Exception(f"Failed to secure agents: {str(e)}")
         
         # Verify agents
-        research_valid = await verify_agent(client, secured_research, "Research", "research-assistant-a")
-        blog_valid = await verify_agent(client, secured_blog, "Blog", "blog-writer-a")
+        research_valid = await verify_agent(client, secured_research, "Research")
+        blog_valid = await verify_agent(client, secured_blog, "Blog")
         
         if not (research_valid and blog_valid):
             raise ValueError("Agent verification failed - check agent identities and permissions")
