@@ -18,7 +18,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^20.11.16",
-    "aztp-client": "^1.0.2",
+    "aztp-client": "^1.0.7",
     "dotenv": "^16.4.1",
     "openai": "^4.26.0"
   },

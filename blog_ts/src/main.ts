@@ -28,16 +28,27 @@ async function main() {
         const researchAgent = new ResearchAgent(openaiApiKey);
         const blogAgent = new BlogAgent(openaiApiKey);
 
+        // Constants
+        const globalAgentName = "daily-blogs-agent-02";
+        const trustDomain = "agentsfounders.club";
+        const researchAgentName = "research-agent-02";
+
         // Secure the agents with AZTP
-        console.log('Securing research agent...');
-        const securedResearch = await client.secureConnect(researchAgent, {
-            name: "fancy-research-agent"
-        });
-        
+
         console.log('Securing blog agent...');
         const securedBlog = await client.secureConnect(blogAgent, {
-            name: "fancy-blog-agent"
+            agentName: globalAgentName,
+            isGlobalIdentity: true
         });
+
+        console.log('Securing research agent...');
+        const securedResearch = await client.secureConnect(researchAgent, {
+            agentName: researchAgentName,
+            parentIdentity: securedBlog.identity.aztpId,
+            // trustDomain: trustDomain,
+            isGlobalIdentity: false
+        });
+
 
         // Verify agents
         console.log('\nVerifying research agent...');
