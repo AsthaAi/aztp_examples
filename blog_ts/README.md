@@ -1,12 +1,8 @@
-# Blog Generation System (TypeScript)
+# AZTP Blog Generation Example (TypeScript)
 
-A secure multi-agent system that generates blog posts using OpenAI and AZTP security. This example demonstrates how to:
-- Create and secure multiple AI agents
-- Implement secure agent-to-agent communication
-- Verify agent identities
-- Handle secure data flow
+This example demonstrates how to use the AZTP (Agentic Zero Trust Protocol) to create a secure blog generation system with multiple collaborating agents in TypeScript.
 
-## Architecture
+## Project Overview
 
 ```
 ┌──────────────┐                              ┌──────────────┐
@@ -17,45 +13,42 @@ A secure multi-agent system that generates blog posts using OpenAI and AZTP secu
 └──────────────┘                              └──────────────┘
 ```
 
+The project implements a secure blog generation system using two main agents:
+- **Blog Agent** (Global Identity): Responsible for creating and formatting blog posts
+- **Research Agent** (Child Identity): Handles research and data gathering for blog topics
+
 ## Prerequisites
 
-- Node.js >= 14.0.0
-- TypeScript >= 4.9.0
-- OpenAI API key
-- AZTP API key (get one at [astha.ai](https://astha.ai))
+- Node.js 16+
+- TypeScript 4.5+
+- AZTP API Key
+- OpenAI API Key
 
-## Setup
+## Installation
 
-1. Install dependencies:
+1. Clone the repository and navigate to the project directory:
+```bash
+cd aztp_examples/blog_ts
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Create `.env` file:
+## Configuration
+
+Create a `.env` file in the project root:
 ```env
-# OpenAI API Key
-OPENAI_API_KEY=your_openai_key_here
-
-# AZTP Configuration
-AZTP_API_KEY=your_aztp_key_here
-AZTP_ENV=local
+OPENAI_API_KEY=your_openai_api_key
+AZTP_API_KEY=your_aztp_api_key
+AZTP_ENVIRONMENT=production
 ```
 
-## Running the Example
+## AZTP Integration Guide
 
-1. Build the project:
-```bash
-npm run build
-```
+### Initializing AZTP Client
 
-2. Run the example:
-```bash
-npm start
-```
-
-## Implementation Details
-
-### 1. Initialize AZTP Client
 ```typescript
 import aztp from 'aztp-client';
 
@@ -64,41 +57,59 @@ const client = aztp.initialize({
 });
 ```
 
-### 2. Create and Secure Agents
+### Securing Agents with AZTP
+
+The `secureConnect` method is used to establish secure identities for agents. Here are the two main patterns:
+
+1. **Global Identity** (for root-level agents):
 ```typescript
-// Create base agents
-const researchAgent = new ResearchAgent(openaiApiKey);
-const blogAgent = new BlogAgent(openaiApiKey);
-
-// Secure the agents
-const securedResearch = await client.secureConnect(researchAgent, {
-    name: "research-assistant"
-});
-
+// Blog agent as global identity
 const securedBlog = await client.secureConnect(blogAgent, {
-    name: "blog-writer"
+    agentName: "blog-writer-1",
+    isGlobalIdentity: true  // Uses aztp.network as trust domain
 });
 ```
 
-### 3. Verify Agent Identities
+2. **Child Identity** (for agents under a trust domain):
 ```typescript
-// Verify research agent
-const researchValid = await client.verifyIdentity(securedResearch);
-const researchIdentity = await client.getIdentity(securedResearch);
-
-// Verify blog agent
-const blogValid = await client.verifyIdentity(securedBlog);
-const blogIdentity = await client.getIdentity(securedBlog);
+// Research agent as child with trust domain
+const securedResearch = await client.secureConnect(researchAgent, {
+    agentName: "research-assistant-1",
+    parentIdentity: securedBlog.identity.aztpId,  // Link to parent
+    trustDomain: "astha.ai",  // Explicit trust domain
+    isGlobalIdentity: false
+});
 ```
 
-### 4. Use Secured Agents
-```typescript
-// Research phase
-const researchData = await securedResearch.research(topic);
+### Verifying Agent Identities
 
-// Blog writing phase
-const blogData = await securedBlog.createBlog(researchData);
+AZTP provides straightforward methods for identity verification:
+
+1. **Direct Verification**:
+```typescript
+// Verify agent identity
+const isValid = await client.verifyIdentity(agent);
 ```
+
+2. **Get Identity Details**:
+```typescript
+// Get detailed identity information
+const identity = await client.getIdentity(agent);
+console.log('AZTP ID:', identity.aztpId);
+console.log('Trust Domain:', identity.workloadInfo.trustDomain);
+console.log('Status:', identity.status);
+```
+
+### Understanding AZTP IDs
+
+AZTP IDs follow this format:
+```
+aztp://<trust_domain>/<agent_name>
+```
+
+Examples:
+- Global Identity: `aztp://blog-writer-1`
+- Domain Identity: `aztp://astha.ai/research-assistant-1`
 
 ## Project Structure
 
@@ -106,29 +117,117 @@ const blogData = await securedBlog.createBlog(researchData);
 blog_ts/
 ├── src/
 │   ├── agents/
-│   │   ├── research-agent.ts   # Research agent implementation
-│   │   └── blog-agent.ts       # Blog agent implementation
-│   ├── types.ts               # Type definitions
-│   └── main.ts               # Main orchestration
-├── package.json
-└── tsconfig.json
+│   │   ├── blog-agent.ts     # Blog writing agent
+│   │   └── research-agent.ts # Research agent
+│   └── main.ts              # Main application script
+├── output/
+│   └── blogs/               # Generated blog posts
+├── package.json            # Project dependencies
+├── tsconfig.json          # TypeScript configuration
+└── README.md              # This file
 ```
 
-## Security Features Demonstrated
+## Usage
 
-- 🔐 Agent identity management with SPIFFE
-- 🤝 Secure agent-to-agent communication
-- ✅ Identity verification before operations
-- 📝 Automatic method delegation
+1. Build the project:
+```bash
+npm run build
+```
 
-## Output
+2. Run the main script:
+```bash
+npm start
+```
 
-The system generates blog posts in markdown format, saved in `output/blogs/` directory with timestamps.
+The script will:
+1. Initialize and secure both agents using AZTP
+2. Verify agent identities and trust relationships
+3. Research the specified topic
+4. Generate a blog post based on the research
+5. Save the blog post to the output directory
+
+## Security Features
+
+### Identity Hierarchy
+
+```
+┌─────────────────────┐
+│    Blog Agent       │
+│  (Global Identity)  │
+│   aztp.network     │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│   Research Agent    │
+│   (Child Identity)  │
+│     astha.ai       │
+└─────────────────────┘
+```
+
+### Key Security Features
+- **Global Identity**: Blog Agent uses a global identity under `aztp.network`
+- **Child Identity**: Research Agent operates under a specific trust domain
+- **Identity Verification**: Both agents' identities are verified before operation
+- **Trust Domain**: Proper trust domain separation and hierarchy
+- **Secure Communication**: All agent interactions are secured through AZTP
 
 ## Error Handling
 
-The example includes error handling for:
-- Missing API keys
-- Identity verification failures
-- Agent communication errors
-- File system operations 
+### Common AZTP Errors
+
+1. **Invalid Trust Domain**:
+   ```typescript
+   try {
+       await client.secureConnect(agent, {
+           trustDomain: "invalid-domain",  // Will throw error
+           // ...
+       });
+   } catch (error) {
+       console.error("Trust domain validation failed:", error);
+   }
+   ```
+
+2. **Identity Verification Failures**:
+   ```typescript
+   const isValid = await client.verifyIdentity(agent);
+   if (!isValid) {
+       throw new Error("Agent identity verification failed");
+   }
+   ```
+
+3. **Parent Identity Issues**:
+   ```typescript
+   // Always verify parent identity exists before creating child
+   const parentValid = await client.verifyIdentity(parentAgent);
+   if (!parentValid) {
+       throw new Error("Parent agent identity invalid");
+   }
+   ```
+
+## Type Definitions
+
+Key TypeScript interfaces for AZTP integration:
+
+```typescript
+interface SecureConnectOptions {
+    agentName: string;
+    isGlobalIdentity?: boolean;
+    trustDomain?: string;
+    parentIdentity?: string;
+}
+
+interface AztpIdentity {
+    aztpId: string;
+    workloadInfo: {
+        trustDomain: string;
+        workloadId: string;
+        environment: string;
+    };
+    status: string;
+}
+```
+
+## Contributing
+
+Feel free to submit issues and enhancement requests! 

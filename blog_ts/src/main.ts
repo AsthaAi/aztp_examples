@@ -47,8 +47,6 @@ async function main() {
             parentIdentity: securedBlog.identity.aztpId,
             trustDomain: trustDomain,
             isGlobalIdentity: false,
-            workload: "production",
-            environment: "production"
         });
         console.log('Research agent created:', securedResearch.identity.aztpId);
 
