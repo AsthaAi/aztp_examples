@@ -30,12 +30,13 @@ async function main() {
         const blogAgent = new BlogAgent(openaiApiKey);
 
         // Constants
-        const trustDomain = "astha.ai";  // Trust domain for non-global identities
+        const trustDomain = "vcagents.ai";  // Trust domain for non-global identities
 
         // Secure the blog agent with global identity (no trust domain needed)
         console.log('Securing blog agent...');
         const securedBlog = await client.secureConnect(blogAgent, {
-            agentName: "blog-writer-1",
+            agentName: "blog-writer-1",  // Make sure this is unique. If you get an error about the agent name, change it.
+                                        // Since this example is run multiple times by many people, using the same agent name will cause an error.
             isGlobalIdentity: true
         });
         console.log('Blog agent created:', securedBlog.identity.aztpId);
@@ -43,7 +44,7 @@ async function main() {
         // Secure the research agent as child with explicit trust domain
         console.log('Securing research agent...');
         const securedResearch = await client.secureConnect(researchAgent, {
-            agentName: "research-assistant-1",
+            agentName: "research-assistant-1",  // Make sure this is unique, just like the parent agent name
             parentIdentity: securedBlog.identity.aztpId,
             trustDomain: trustDomain,
             isGlobalIdentity: false,

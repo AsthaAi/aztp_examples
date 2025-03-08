@@ -70,7 +70,7 @@ async def main() -> None:
     client = None
     secured_research = None
     secured_blog = None
-    trust_domain = 'astha.ai'  # Trust domain for non-global identities
+    trust_domain = 'abc.com'  # Trust domain for non-global identities
     
     try:
         # Load environment variables
@@ -88,26 +88,22 @@ async def main() -> None:
         
         # Secure the agents with AZTP
         try:
-            # Blog agent as parent with global identity (no trust domain needed)
-            secured_blog = await client.secure_connect(
-                blog_agent,
-                {
-                    "agentName": "blog-writer-1",
-                    "isGlobalIdentity": True
-                }
-            )
+            # Assign the blog agent with global identity (no trust domain needed)
+            print('Securing blog agent...')
+            secured_blog = await client.secure_connect(blog_agent, {
+                "agentName": "blog-writer-1",  # Make sure this is unique. If you get an error about the agent name, change it.
+                                               # Since this example is run multiple times by many people, using the same agent name will cause an error.
+                "isGlobalIdentity": True
+            })
+            print('Blog agent created:', secured_blog.identity.aztp_id)
             
-            # Research agent as child with explicit trust domain
-            secured_research = await client.secure_connect(
-                research_agent,
-                {
-                    "agentName": "research-assistant-1",
-                    "parentIdentity": secured_blog.identity.aztp_id,
-                    "trustDomain": trust_domain,
-                    "isGlobalIdentity": False,
-
-                }
-            )
+            print('Securing research agent...')
+            secured_research = await client.secure_connect(research_agent, {
+                "agentName": "research-assistant-1",  # Make sure this is unique, just like the parent agent name
+                "parentIdentity": secured_blog.identity.aztp_id,
+                "trustDomain": trust_domain,
+                "isGlobalIdentity": False,
+            })
         except Exception as e:
             raise Exception(f"Failed to secure agents: {str(e)}")
         
