@@ -68,6 +68,11 @@ source parent-child-env/bin/activate  # On Windows: parent-child-env\Scripts\act
 pip install -r requirements.txt
 ```
 
+If you already have aztp_client installed, upgrade to latest
+```bash
+pip install --upgrade aztp-client
+```
+
 ## Configuration
 
 1. Create a `.env` file in the project root with the following variables:
@@ -75,6 +80,9 @@ pip install -r requirements.txt
 AZTP_API_KEY=your_aztp_api_key
 ```
 :: Note: You can get API key from www.astha.ai
+
+Check for more details:
+https://pypi.org/project/aztp-client/
 
 ## AZTP Integration Guide
 
