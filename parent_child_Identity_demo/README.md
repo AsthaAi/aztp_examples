@@ -75,6 +75,7 @@ pip install -r requirements.txt
 AZTP_API_KEY=your_aztp_api_key
 ```
 :: Note: You can get API key from www.astha.ai
+:: Also check https://pypi.org/project/aztp-client/
 
 ## AZTP Integration Guide
 
@@ -84,7 +85,7 @@ AZTP_API_KEY=your_aztp_api_key
 from aztp_client import Aztp
 
 client = Aztp(api_key=API_KEY)
-trust_domain = "gptarticles.xyz"  # Your whitelisted trust domain
+trust_domain = "your-verified-domain.com"  # Your domain verified through AZTP cloud
 ```
 
 ### Creating a Global Identity (Root Agent)

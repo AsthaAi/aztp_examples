@@ -7,6 +7,9 @@ from aztp_client.common.config import whiteListTrustDomains
 # Load environment variables
 load_dotenv()
 
+# Define a suffix to make all agent and tool names unique
+name_suffix = "-thursday"  # Change this to create unique names for different runs
+
 # Initialize empty objects for all agents and tools
 # SDRAgent (Global Parent) and its tools
 sdr_agent = {}
@@ -63,12 +66,12 @@ async def main():
             raise ValueError("AZTP_API_KEY environment variable is not set")
 
         client = Aztp(api_key=API_KEY)
-        trust_domain = "gptarticles.xyz"
+        trust_domain = "gptapp.ai"
 
         print("\n1. Creating SDRAgent (Global)...")
         secured_sdr = await client.secure_connect(
             sdr_agent,
-            "giveUniqueName", #Give unique name. Think this like domain name. If it is taken, you will get error in terminal. To fix that error, just chan
+            f"sdrAgent{name_suffix}", #Give unique name. Think this like domain name. If it is taken, you will get error in terminal. To fix that error, just change the name.
             {
                 "isGlobalIdentity": True,
             }
@@ -82,7 +85,7 @@ async def main():
         print("\n2. Creating CustomerServiceAgent...")
         secured_customer_service = await client.secure_connect(
             customer_service_agent,
-            'customer-friday',
+            f'customer-guardian{name_suffix}',
             {
                 "parentIdentity": secured_sdr.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -100,7 +103,7 @@ async def main():
         print("\nSecuring CustomerServiceAgent's tools...")
         secured_jira = await client.secure_connect(
             jira,
-            'jira1',
+            f'jira-wizard{name_suffix}',
             {
                 "parentIdentity": secured_customer_service.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -115,7 +118,7 @@ async def main():
 
         secured_slack = await client.secure_connect(
             slack,
-            'slackFriday',
+            f'slack-messenger{name_suffix}',
             {
                 "parentIdentity": secured_customer_service.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -131,7 +134,7 @@ async def main():
 
         secured_notion = await client.secure_connect(
             notion, 
-            'notion1',
+            f'notion-scribe{name_suffix}',
             {
                 "parentIdentity": secured_customer_service.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -142,7 +145,7 @@ async def main():
 
         secured_airtable = await client.secure_connect(
             airtable,
-            'airtable1',
+            f'airtable-organizer{name_suffix}',
             {
                 "parentIdentity": secured_customer_service.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -155,16 +158,16 @@ async def main():
         print("\n3. Creating SalesAgent...")
         secured_sales = await client.secure_connect(
             sales_agent,
-            'sales-agent-2',
+            f'sales-champion{name_suffix}-1',
             {
                 "parentIdentity": secured_sdr.identity.aztp_id,
-                "trustDomain": trust_domain,
+                "trustDomain": 'gigacity.xyz',
                 "isGlobalIdentity": False
             }
         )
         print('SalesAgent AZTP ID:', secured_sales.identity.aztp_id)
         sales_verified = await client.verify_identity_using_agent_name(
-            'sales-agent-2',
+            f'sales-champion{name_suffix}',
             trust_domain=trust_domain,
         )
         print('SalesAgent Identity Verified:', sales_verified)
@@ -173,7 +176,7 @@ async def main():
         print("\nSecuring SalesAgent's tools...")
         secured_salesforce = await client.secure_connect(
             salesforce,
-            'salesforce1',
+            f'salesforce-dynamo{name_suffix}',
             {
                 "parentIdentity": secured_sales.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -190,7 +193,7 @@ async def main():
 
         secured_asana = await client.secure_connect(
             asana,
-            'asana1',
+            f'asana-taskmaster{name_suffix}',
             {
                 "parentIdentity": secured_sales.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -201,7 +204,7 @@ async def main():
 
         secured_tableau = await client.secure_connect(
             tableau,
-            'tableau1',
+            f'tableau-visualizer{name_suffix}',
             {
                 "parentIdentity": secured_sales.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -212,7 +215,7 @@ async def main():
 
         secured_gmail = await client.secure_connect(
             gmail,
-            'gmail1',
+            f'gmail-communicator{name_suffix}',
             {
                 "parentIdentity": secured_sales.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -225,9 +228,10 @@ async def main():
         regional_agents = []
         for i in range(2):
             print(f"\n4. Creating RegionalSales{i+1}...")
+            region_names = [f"regional-east-captain{name_suffix}", f"regional-west-captain{name_suffix}"]
             secured_regional = await client.secure_connect(
                 regional_sales1 if i == 0 else regional_sales2,
-                f"regional-sales1-{i+1}",
+                region_names[i],
                 {
                     "parentIdentity": secured_sales.identity.aztp_id,
                     "trustDomain": trust_domain,
@@ -243,9 +247,10 @@ async def main():
 
             # Secure RegionalSales tools
             print(f"\nSecuring RegionalSales{i+1}'s tools...")
+            trello_names = [f"trello-east-planner{name_suffix}", f"trello-west-planner{name_suffix}"]
             secured_trello = await client.secure_connect(
                 trello,
-                'trello1',
+                trello_names[i],
                 {
                     "parentIdentity": secured_regional.identity.aztp_id,
                     "trustDomain": trust_domain,
@@ -258,9 +263,10 @@ async def main():
             )
             print('Trello Tool Identity Verified:', trello_verified)
 
+            hubspot_names = [f"hubspot-east-connector{name_suffix}", f"hubspot-west-connector{name_suffix}"]
             secured_hubspot = await client.secure_connect(
                 hubspot,
-                'hubspot1',
+                hubspot_names[i],
                 {
                     "parentIdentity": secured_regional.identity.aztp_id,
                     "trustDomain": trust_domain,
@@ -273,9 +279,10 @@ async def main():
             )
             print('Hubspot Tool Identity Verified:', hubspot_verified)
 
+            clickup_names = [f"clickup-east-tracker{name_suffix}", f"clickup-west-tracker{name_suffix}"]
             secured_clickup = await client.secure_connect(
                 clickup,
-                'clickup1',
+                clickup_names[i],
                 {
                     "parentIdentity": secured_regional.identity.aztp_id,
                     "trustDomain": trust_domain,
@@ -288,9 +295,10 @@ async def main():
             )
             print('Clickup Tool Identity Verified:', clickup_verified)
 
+            zoom_names = [f"zoom-east-meeting{name_suffix}", f"zoom-west-meeting{name_suffix}"]
             secured_zoom = await client.secure_connect(
                 zoom,
-                'zoom1',
+                zoom_names[i],
                 {
                     "parentIdentity": secured_regional.identity.aztp_id,
                     "trustDomain": trust_domain,
@@ -304,13 +312,14 @@ async def main():
             print('Zoom Tool Identity Verified:', zoom_verified)
 
         # Create and secure LocalSales agents
+        local_agent_names = [f"local-northeast-rep{name_suffix}", f"local-southeast-rep{name_suffix}", f"local-northwest-rep{name_suffix}", f"local-southwest-rep{name_suffix}"]
         for i, regional_agent in enumerate(regional_agents):
             for j in range(2):
                 local_index = i * 2 + j
                 print(f"\n5. Creating LocalSales{local_index+1}...")
                 secured_local = await client.secure_connect(
                     local_sales[local_index],
-                    f"local-sales-1-{local_index+1}",
+                    local_agent_names[local_index],
                     {
                         "parentIdentity": regional_agent.identity.aztp_id,
                         "trustDomain": trust_domain,
@@ -325,9 +334,10 @@ async def main():
 
                 # Secure LocalSales tools
                 print(f"\nSecuring LocalSales{local_index+1}'s tools...")
+                figma_names = [f"figma-northeast-designer{name_suffix}", f"figma-southeast-designer{name_suffix}", f"figma-northwest-designer{name_suffix}", f"figma-southwest-designer{name_suffix}"]
                 secured_figma = await client.secure_connect(
                     figma,
-                    'figma1',
+                    figma_names[local_index],
                     {
                         "parentIdentity": secured_local.identity.aztp_id,
                         "trustDomain": trust_domain,
@@ -340,9 +350,10 @@ async def main():
                 )
                 print('Figma Tool Identity Verified:', figma_verified)
 
+                mem0_names = [f"mem0-northeast-notes{name_suffix}", f"mem0-southeast-notes{name_suffix}", f"mem0-northwest-notes{name_suffix}", f"mem0-southwest-notes{name_suffix}"]
                 secured_mem0 = await client.secure_connect(
                     mem0,
-                    'mem01',
+                    mem0_names[local_index],
                     {
                         "parentIdentity": secured_local.identity.aztp_id,
                         "trustDomain": trust_domain,
@@ -355,9 +366,10 @@ async def main():
                 )
                 print('Mem0 Tool Identity Verified:', mem0_verified)
 
+                docusign_names = [f"docusign-northeast-contracts{name_suffix}", f"docusign-southeast-contracts{name_suffix}", f"docusign-northwest-contracts{name_suffix}", f"docusign-southwest-contracts{name_suffix}"]
                 secured_docusign = await client.secure_connect(
                     docusign,
-                    'docusign1',
+                    docusign_names[local_index],
                     {
                         "parentIdentity": secured_local.identity.aztp_id,
                         "trustDomain": trust_domain,
@@ -370,9 +382,10 @@ async def main():
                 )
                 print('DocuSign Tool Identity Verified:', docusign_verified)
 
+                linkedin_names = [f"linkedin-northeast-networker{name_suffix}", f"linkedin-southeast-networker{name_suffix}", f"linkedin-northwest-networker{name_suffix}", f"linkedin-southwest-networker{name_suffix}"]
                 secured_linkedin = await client.secure_connect(
                     linkedin,
-                    'linkedin1',
+                    linkedin_names[local_index],
                     {
                         "parentIdentity": secured_local.identity.aztp_id,
                         "trustDomain": trust_domain,
@@ -389,7 +402,7 @@ async def main():
         print("\n6. Creating SupportAgent...")
         secured_support = await client.secure_connect(
             support_agent,
-            'support-agent-2',
+            f'support-sentinel{name_suffix}',
             {
                 "parentIdentity": secured_sdr.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -406,7 +419,7 @@ async def main():
         print("\nSecuring SupportAgent's tools...")
         secured_zendesk = await client.secure_connect(
             zendesk,
-            'zendesk1',
+            f'zendesk-helper{name_suffix}',
             {
                 "parentIdentity": secured_support.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -421,7 +434,7 @@ async def main():
 
         secured_confluence = await client.secure_connect(
             confluence,
-            'confluence1',
+            f'confluence-librarian{name_suffix}',
             {
                 "parentIdentity": secured_support.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -436,7 +449,7 @@ async def main():
 
         secured_teams = await client.secure_connect(
             teams,
-            'teams1',
+            f'teams-collaborator{name_suffix}',
             {
                 "parentIdentity": secured_support.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -451,7 +464,7 @@ async def main():
 
         secured_monday = await client.secure_connect(
             monday,
-            'monday1',
+            f'monday-orchestrator{name_suffix}',
             {
                 "parentIdentity": secured_support.identity.aztp_id,
                 "trustDomain": trust_domain,
@@ -465,11 +478,12 @@ async def main():
         print('Monday Tool Identity Verified:', monday_verified)
 
         # Create and secure TechSupport agents
+        tech_support_names = [f"tech-wizard{name_suffix}", f"tech-guru{name_suffix}"]
         for i in range(2):
             print(f"\n7. Creating TechSupport{i+1}...")
             secured_tech = await client.secure_connect(
                 tech_support1 if i == 0 else tech_support2,
-                f"tech-support-{i+1}",
+                tech_support_names[i],
                 {
                     "parentIdentity": secured_support.identity.aztp_id,
                     "trustDomain": trust_domain,
@@ -484,9 +498,10 @@ async def main():
 
             # Secure TechSupport tools
             print(f"\nSecuring TechSupport{i+1}'s tools...")
+            jira_service_names = [f"jira-service-wizard{name_suffix}", f"jira-service-guru{name_suffix}"]
             secured_jira_service = await client.secure_connect(
                 jira_service,
-                'jira-service',
+                jira_service_names[i],
                 {
                     "parentIdentity": secured_tech.identity.aztp_id,
                     "trustDomain": trust_domain,
@@ -499,9 +514,10 @@ async def main():
             )
             print('Jira Service Tool Identity Verified:', jira_service_verified)
 
+            github_names = [f"github-wizard-repo{name_suffix}", f"github-guru-repo{name_suffix}"]
             secured_github = await client.secure_connect(
                 github,
-                'github1',
+                github_names[i],
                 {
                     "parentIdentity": secured_tech.identity.aztp_id,
                     "trustDomain": trust_domain,
@@ -514,9 +530,10 @@ async def main():
             )
             print('GitHub Tool Identity Verified:', github_verified)
 
+            tech_notion_names = [f"tech-notion-wizard{name_suffix}", f"tech-notion-guru{name_suffix}"]
             secured_tech_notion = await client.secure_connect(
                 tech_notion,
-                'tech-notion1',
+                tech_notion_names[i],
                 {
                     "parentIdentity": secured_tech.identity.aztp_id,
                     "trustDomain": trust_domain,
@@ -529,9 +546,10 @@ async def main():
             )
             print('Tech Notion Tool Identity Verified:', tech_notion_verified)
 
+            tech_slack_names = [f"tech-slack-wizard{name_suffix}", f"tech-slack-guru{name_suffix}"]
             secured_tech_slack = await client.secure_connect(
                 tech_slack,
-                'tech-slack1',
+                tech_slack_names[i],
                 {
                     "parentIdentity": secured_tech.identity.aztp_id,
                     "trustDomain": trust_domain,

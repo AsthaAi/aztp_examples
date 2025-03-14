@@ -1,0 +1,32 @@
+# Environment files with actual API keys
+.env.research
+.env.blog
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+ENV/
+parent-child
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+.env.research.sample
+.env.blog.sample
+
+# OS specific files
+.DS_Store
+Thumbs.db 
