@@ -20,7 +20,7 @@ def create_env_file(file_name, api_key_var, api_key_value=None):
     if not api_key_value:
         print(f"\nEnter your {api_key_var} value.")
         print("This should be a valid AZTP API key with permissions to issue identities.")
-        print("Example format: 03bdae2040010881776d47462a3700b064a3a1124ad39021411743154de1f8e3")
+        print("Example format: 03bdae20400108817dsdsasdadsasd3a1124ad39021411743154de1f8e3")
         api_key_value = input(f"{api_key_var}=")
     
     with open(file_name, 'w') as f:
