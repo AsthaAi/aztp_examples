@@ -18,7 +18,10 @@ def create_env_file(file_name, api_key_var, api_key_value=None):
             return False
     
     if not api_key_value:
-        api_key_value = input(f"Enter your {api_key_var} value: ")
+        print(f"\nEnter your {api_key_var} value.")
+        print("This should be a valid AZTP API key with permissions to issue identities.")
+        print("Example format: 03bdae2040010881776d47462a3700b064a3a1124ad39021411743154de1f8e3")
+        api_key_value = input(f"{api_key_var}=")
     
     with open(file_name, 'w') as f:
         f.write(f"# Environment file for the Cross-Trust-Domain Demo\n")
@@ -33,7 +36,9 @@ def main():
     print("Cross-Trust-Domain Demo Setup")
     print("=" * 80)
     print("\nThis script will help you set up the necessary environment files for the demo.")
-    print("You will need two different AZTP API keys (one for each agent).")
+    print("\nIMPORTANT: You will need two different AZTP API keys (one for each agent).")
+    print("These must be valid API keys with permissions to issue identities.")
+    print("Sample or fake API keys will result in 403 Forbidden errors.")
     
     # Check if sample files exist and create them if needed
     if not os.path.exists('.env.research.sample'):
@@ -48,22 +53,11 @@ def main():
             f.write("# Rename this file to .env.blog and replace with your actual API key\n\n")
             f.write("AZTP_API_KEY_BLOG=your_blog_agent_api_key_here\n")
     
-    # Option to use sample values for quick testing
-    use_sample = input("\nDo you want to use sample API keys for testing? (y/n): ")
+    print("\nSetting up Research Agent environment:")
+    create_env_file('.env.research', 'AZTP_API_KEY_RESEARCH')
     
-    if use_sample.lower() == 'y':
-        print("\nUsing sample API keys. Note: These are for demonstration only and won't work with actual AZTP services.")
-        research_key = "sample_research_api_key_123456789"
-        blog_key = "sample_blog_api_key_987654321"
-        
-        create_env_file('.env.research', 'AZTP_API_KEY_RESEARCH', research_key)
-        create_env_file('.env.blog', 'AZTP_API_KEY_BLOG', blog_key)
-    else:
-        print("\nSetting up Research Agent environment:")
-        create_env_file('.env.research', 'AZTP_API_KEY_RESEARCH')
-        
-        print("\nSetting up Blog Agent environment:")
-        create_env_file('.env.blog', 'AZTP_API_KEY_BLOG')
+    print("\nSetting up Blog Agent environment:")
+    create_env_file('.env.blog', 'AZTP_API_KEY_BLOG')
     
     print("\nSetup complete!")
     print("\nYou can now run the demo with:")

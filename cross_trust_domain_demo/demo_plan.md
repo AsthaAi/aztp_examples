@@ -94,11 +94,5 @@ Each agent will use a separate .env file with different API keys:
 2. Secure data exchange between verified agents
 3. Access denial when verification fails
 
-## Extensions
 
-Potential extensions to this demo could include:
 
-1. Multiple agents in each trust domain with hierarchical relationships
-2. Time-limited verification tokens
-3. Revocation of verification privileges
-4. Verification based on specific capabilities or roles

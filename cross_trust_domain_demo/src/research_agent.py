@@ -40,16 +40,19 @@ class ResearchAgent:
         # Load environment variables from .env.research
         env_file = ".env.research"
         if not os.path.exists(env_file):
-            print(f"Warning: {env_file} not found. Please run setup.py to create it.")
-            print("For testing purposes, using a sample API key (will not work with actual AZTP services).")
-            os.environ["AZTP_API_KEY_RESEARCH"] = "sample_research_api_key_123456789"
-        else:
-            load_dotenv(env_file)
+            print(f"ERROR: {env_file} not found.")
+            print(f"Please run 'python setup.py' to create the {env_file} file with a valid API key.")
+            print("A valid AZTP API key with identity issuance permissions is required.")
+            raise ValueError(f"Missing {env_file} file. Run setup.py first.")
+        
+        load_dotenv(env_file)
         
         # Get API key
         self.api_key = os.getenv("AZTP_API_KEY_RESEARCH")
         if not self.api_key:
-            raise ValueError(f"AZTP_API_KEY_RESEARCH environment variable is not set in {env_file}. Run setup.py to configure it.")
+            print(f"ERROR: AZTP_API_KEY_RESEARCH environment variable is not set in {env_file}.")
+            print(f"Please run 'python setup.py' to configure a valid API key.")
+            raise ValueError(f"AZTP_API_KEY_RESEARCH not found in {env_file}")
         
         # Set trust domain for this agent
         self.trust_domain = "gptarticles.xyz"
@@ -62,6 +65,7 @@ class ResearchAgent:
         self.approved_trust_domains = ["gptapps.ai", "gptarticles.xyz"]
         
         print(f"Research Agent initialized with trust domain: {self.trust_domain}")
+        print(f"API Key: {self.api_key[:8]}...")
     
     async def setup(self):
         """Set up the Research Agent with AZTP identity."""
@@ -75,7 +79,8 @@ class ResearchAgent:
                 "research-data-provider-thursday",  # Agent name
                 {
                     "isGlobalIdentity": False, 
-                    "trustDomain": self.trust_domain
+                    "trustDomain": self.trust_domain,
+                    'approvedTrustDomains': ['gptapps.ai', 'gptarticles.xyz']
                 }
             )
             
@@ -89,6 +94,10 @@ class ResearchAgent:
             
         except Exception as error:
             print(f'Error setting up Research Agent: {str(error)}')
+            if "403" in str(error) or "Forbidden" in str(error) or "Unauthorized" in str(error):
+                print("\nAUTHORIZATION ERROR: Your API key was rejected by the AZTP service.")
+                print("Please ensure you're using a valid API key with the correct permissions.")
+                print("Run 'python setup.py' to update your API key.")
             return None
     
     async def verify_requesting_agent(self, agent_id, agent_trust_domain):
@@ -110,14 +119,24 @@ class ResearchAgent:
                 print(f"Trust domain {agent_trust_domain} is not in the approved list")
                 return False
             
-            # Verify the agent's identity using its ID
-            is_verified = await self.client.verify_identity_using_aztp_id(
-                agent_id,
-                trust_domain=agent_trust_domain
-            )
-            
-            print(f"Agent verification result: {is_verified}")
-            return is_verified
+            # Extract the agent name from the AZTP ID
+            # Format is typically: aztp://domain/workload/production/node/agent-name
+            agent_parts = agent_id.split('/')
+            if len(agent_parts) >= 6:
+                agent_name = agent_parts[-1]  # Get the last part which should be the agent name
+                print(f"Extracted agent name: {agent_name}")
+                
+                # Verify the agent's identity using its name and trust domain
+                is_verified = await self.client.verify_identity_using_agent_name(
+                    agent_name,
+                    trust_domain=agent_trust_domain
+                )
+                
+                print(f"Agent verification result: {is_verified}")
+                return is_verified
+            else:
+                print(f"Could not extract agent name from ID: {agent_id}")
+                return False
             
         except Exception as error:
             print(f'Error verifying agent: {str(error)}')

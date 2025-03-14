@@ -21,16 +21,19 @@ class BlogAgent:
         # Load environment variables from .env.blog
         env_file = ".env.blog"
         if not os.path.exists(env_file):
-            print(f"Warning: {env_file} not found. Please run setup.py to create it.")
-            print("For testing purposes, using a sample API key (will not work with actual AZTP services).")
-            os.environ["AZTP_API_KEY_BLOG"] = "sample_blog_api_key_987654321"
-        else:
-            load_dotenv(env_file)
+            print(f"ERROR: {env_file} not found.")
+            print(f"Please run 'python setup.py' to create the {env_file} file with a valid API key.")
+            print("A valid AZTP API key with identity issuance permissions is required.")
+            raise ValueError(f"Missing {env_file} file. Run setup.py first.")
+        
+        load_dotenv(env_file)
         
         # Get API key
         self.api_key = os.getenv("AZTP_API_KEY_BLOG")
         if not self.api_key:
-            raise ValueError(f"AZTP_API_KEY_BLOG environment variable is not set in {env_file}. Run setup.py to configure it.")
+            print(f"ERROR: AZTP_API_KEY_BLOG environment variable is not set in {env_file}.")
+            print(f"Please run 'python setup.py' to configure a valid API key.")
+            raise ValueError(f"AZTP_API_KEY_BLOG not found in {env_file}")
         
         # Set trust domain for this agent
         self.trust_domain = "gptapps.ai"
@@ -40,6 +43,7 @@ class BlogAgent:
         self.secured_agent = None
         
         print(f"Blog Agent initialized with trust domain: {self.trust_domain}")
+        print(f"API Key: {self.api_key[:8]}...")
     
     async def setup(self):
         """Set up the Blog Agent with AZTP identity."""
@@ -67,6 +71,10 @@ class BlogAgent:
             
         except Exception as error:
             print(f'Error setting up Blog Agent: {str(error)}')
+            if "403" in str(error) or "Forbidden" in str(error) or "Unauthorized" in str(error):
+                print("\nAUTHORIZATION ERROR: Your API key was rejected by the AZTP service.")
+                print("Please ensure you're using a valid API key with the correct permissions.")
+                print("Run 'python setup.py' to update your API key.")
             return None
     
     async def request_research_data(self, research_agent_id, topic=None):
