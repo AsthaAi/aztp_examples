@@ -1,0 +1,25 @@
+{
+  "name": "policy_demo",
+  "version": "1.0.0",
+  "description": "AZTP Policy Demo",
+  "main": "src/policyDemo.ts",
+  "scripts": {
+    "start": "ts-node src/policyDemo.ts",
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn src/policyDemo.ts"
+  },
+  "keywords": [
+    "aztp",
+    "policy",
+    "identity"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aztp-client": "^1.0.19",
+    "dotenv": "^16.0.3",
+    "typescript": "^4.9.5",
+    "@types/node": "^18.15.11",
+    "ts-node": "^10.9.1"
+  }
+}

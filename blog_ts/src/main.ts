@@ -1,104 +1,118 @@
-/// <reference types="node" />
-import { config } from 'dotenv';
-import { mkdir, writeFile } from 'fs/promises';
-import { join } from 'path';
-import aztp from 'aztp-client';
-import { ResearchAgent } from './agents/research-agent';
-import { BlogAgent } from './agents/blog-agent';
-
-// Load environment variables
-config();
+import aztp, { whiteListTrustDomains } from "aztp-client";
 
 async function main() {
-    try {
-        // Get API keys from environment
-        const aztpApiKey = process.env.AZTP_API_KEY;
-        const openaiApiKey = process.env.OPENAI_API_KEY;
+  // Initialize the client with API key from environment
+  const API_KEY = process.env.AZTP_API_KEY;
+  if (!API_KEY) {
+    throw new Error("AZTP_API_KEY is not set");
+  }
 
-        if (!aztpApiKey || !openaiApiKey) {
-            throw new Error('AZTP_API_KEY and OPENAI_API_KEY are required');
-        }
+  const client = aztp.initialize({
+    apiKey: API_KEY,
+  });
 
-        // Initialize AZTP client
-        const client = aztp.initialize({
-            apiKey: aztpApiKey
-        });
+  // Create base agents
+  const crewAgent = {};
+  const otherAgentA = {};
+  const otherAgentB = {};
+  const agentName = "MyAgent-01";
+  const otherAgentNameA = "MyAgent-01-A";
+  const otherAgentNameB = "MyAgent-01-B";
 
-        console.log('\nInitializing agents...');
-        // Create base agents
-        const researchAgent = new ResearchAgent(openaiApiKey);
-        const blogAgent = new BlogAgent(openaiApiKey);
+  try {
+    // Initialize AZTP client with all configuration
+    const aztpClient = aztp.initialize({
+      apiKey: API_KEY,
+    });
 
-        // Constants
-        const trustDomain = "vcagents.ai";  // Trust domain for non-global identities
+    // Check available trusted domains
+    console.log("Available trusted domains:", whiteListTrustDomains);
 
-        // Secure the blog agent with global identity (no trust domain needed)
-        console.log('Securing blog agent...');
-        const securedBlog = await client.secureConnect(blogAgent, {
-            agentName: "blog-writer-1",  // Make sure this is unique. If you get an error about the agent name, change it.
-                                        // Since this example is run multiple times by many people, using the same agent name will cause an error.
-            isGlobalIdentity: true
-        });
-        console.log('Blog agent created:', securedBlog.identity.aztpId);
+    // Issue identity
+    // Example 1: Identity will be issued with global identity
+    console.log("1. Issuing identity for agent:", agentName);
+    const securedAgent = await aztpClient.secureConnect(crewAgent, agentName, {
+      isGlobalIdentity: true,
+    });
+    console.log("AZTP ID:", securedAgent);
 
-        // Secure the research agent as child with explicit trust domain
-        console.log('Securing research agent...');
-        const securedResearch = await client.secureConnect(researchAgent, {
-            agentName: "research-assistant-1",  // Make sure this is unique, just like the parent agent name
-            parentIdentity: securedBlog.identity.aztpId,
-            trustDomain: trustDomain,
-            isGlobalIdentity: false,
-        });
-        console.log('Research agent created:', securedResearch.identity.aztpId);
+    // Example 2: Issue identity with linked identity
+    console.log("2. Issuing identity with linked identity:", otherAgentNameA);
+    const otherSecuredAgentA = await aztpClient.secureConnect(
+      otherAgentA,
+      otherAgentNameA,
+      {
+        linkTo: [securedAgent.identity.aztpId],
+        isGlobalIdentity: false,
+      }
+    );
+    console.log("Other AZTP ID with linked identity:", otherSecuredAgentA);
 
-        // Verify agents using direct verification
-        console.log('\nVerifying research agent...');
-        const researchValid = await client.verifyIdentity(securedResearch);
-        console.log('Research Agent Identity Valid:', researchValid);
-        if (researchValid) {
-            const researchIdentity = await client.getIdentity(securedResearch);
-            console.log('Research Agent Identity:', researchIdentity);
-        }
+    // Example 3: Issue identity with trust domain, linked identity and parent identity
+    // Identity will be issued with trust domain, linked identity and parent identity
+    // Trust domain must be verified in astha.ai
+    console.log(
+      "3. Issuing identity with trust domain and linked identity:",
+      otherAgentNameB
+    );
+    const otherSecuredAgentWithTrustDomain = await aztpClient.secureConnect(
+      otherAgentB,
+      otherAgentNameB,
+      {
+        trustDomain: whiteListTrustDomains["gptarticles.xyz"],
+        linkTo: [otherSecuredAgentA.identity.aztpId],
+        parentIdentity: securedAgent.identity.aztpId,
+        isGlobalIdentity: false,
+      }
+    );
+    console.log(
+      "Other AZTP ID with trust domain and linked identity:",
+      otherSecuredAgentWithTrustDomain
+    );
 
-        console.log('\nVerifying blog agent...');
-        const blogValid = await client.verifyIdentity(securedBlog);
-        console.log('Blog Agent Identity Valid:', blogValid);
-        if (blogValid) {
-            const blogIdentity = await client.getIdentity(securedBlog);
-            console.log('Blog Agent Identity:', blogIdentity);
-        }
+    // Verify identity
+    console.log("\nVerify identity", "AgentName:", agentName);
+    const isValid = await aztpClient.verifyIdentity(securedAgent);
+    console.log("Identity Valid:", isValid);
 
-        if (!(researchValid && blogValid)) {
-            throw new Error("Agent verification failed");
-        }
+    // Verify identity connection
+    console.log(
+      "\nVerify identity connection from agent",
+      agentName,
+      "to agent",
+      otherAgentNameB
+    );
+    const isValidConnection = await aztpClient.verifyIdentityConnection(
+      securedAgent.identity.aztpId,
+      otherSecuredAgentWithTrustDomain.identity.aztpId
+    );
+    console.log("Valid Connection:", isValidConnection);
 
-        // Generate blog post
-        const topic = "Zero Trust Security in AI Systems";
+    // Get existing identity
+    console.log("\nGet identity for", "AgentName:", agentName);
+    const existingIdentity = await aztpClient.getIdentity(securedAgent);
+    console.log("Get Identity:", existingIdentity);
 
-        // Research phase
-        console.log(`\nResearching topic: ${topic}`);
-        const researchData = await securedResearch.research(topic);
-        console.log(`Research completed: ${researchData.metadata.timestamp}`);
+    // Discoverable identities
+    // Discoverable identities are identities that are discoverable by other agents
+    console.log("\nDiscoverable identities");
+    const discoveredIdentities = await aztpClient.discoverIdentity();
+    console.log("Discovered Identities:", discoveredIdentities);
 
-        // Blog writing phase
-        console.log('\nGenerating blog post...');
-        const blogData = await securedBlog.createBlog(researchData);
-        console.log(`Blog created: ${blogData.metadata.timestamp}`);
-
-        // Save blog post
-        const outputDir = join(process.cwd(), 'output', 'blogs');
-        await mkdir(outputDir, { recursive: true });
-
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = join(outputDir, `blog_${timestamp}.md`);
-
-        await writeFile(filename, blogData.content);
-        console.log(`\nBlog saved to: ${filename}`);
-
-    } catch (error) {
-        console.error('\nError:', error);
-        process.exit(1);
-    }
+    // Discover identity with trust domain
+    // Discoverable identities with trust domain are identities that are discoverable by other agents
+    // Trust domain must be verified in astha.ai
+    console.log("\nDiscoverable identities with trust domain");
+    const discoveredIdentitiesWithTrustDomain =
+      await aztpClient.discoverIdentity({
+        trustDomain: whiteListTrustDomains["gptarticles.xyz"],
+        requestorIdentity: securedAgent.identity.aztpId,
+      });
+    console.log(
+      "Discovered Identities with Trust Domain:",
+      discoveredIdentitiesWithTrustDomain
+    );
+  } catch (error) {
+    console.error("Error:", error);
+  }
 }
-
-main(); 
