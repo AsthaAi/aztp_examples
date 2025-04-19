@@ -1,132 +1,34 @@
-# AZTP Blog Generation Example (TypeScript)
+# Blog Generation with AZTP Trust Chain
 
-This example demonstrates how to implement secure agent identities and trust relationships using the AZTP (Agentic Zero Trust Protocol) in a blog generation system.
+This example demonstrates how to create a secure blog generation system using AZTP (Astha Zero Trust Protocol) to establish trust between different components.
 
-## AZTP Identity Architecture
+## Components
 
+1. **Research Agent**: Conducts research on given topics using OpenAI's API
+2. **Blog Agent**: Creates blog posts based on research findings
+3. **Storage Service**: Manages local storage of blog posts in Markdown format
+
+## Trust Chain
+
+The system establishes a secure trust chain between components:
+- Research Agent ↔️ Blog Agent (bi-directional trust)
+- Blog Agent ↔️ Storage Service (bi-directional trust)
+
+## Storage Implementation
+
+The system stores blog posts locally with the following features:
+- Blog posts are saved as Markdown files with YAML frontmatter
+- Each file includes metadata (author, researcher, date, status)
+- Files are stored in a `blogs` directory in the project root
+- Filenames are generated using timestamps and sanitized titles
+- Example filename: `2024-02-15T10-30-45-123Z-zero-trust-architecture-in-ai-systems.md`
+
+## Setup
+
+1. Create a `.env` file with your API keys:
 ```
-┌──────────────┐                              ┌──────────────┐
-│  Research    │                              │    Blog      │
-│   Agent      │    Agentic Zero Trust       │   Agent      │
-│  (Child ID)  │◄─────── Protocol ──────────►│ (Global ID)  │
-│              │         (AZTP)              │              │
-└──────────────┘                              └──────────────┘
-```
-
-### Identity Types
-
-1. **Global Identity (Blog Agent)**
-   - Root-level identity using `aztp.network` as trust domain
-   - Acts as the parent identity for child agents
-   - Has full control over blog generation and publishing
-   - Establishes trust boundaries for the system
-
-2. **Child Identity (Research Agent)**
-   - Operates under the Blog Agent's trust domain
-   - Limited scope and permissions
-   - Must verify identity with parent for operations
-   - Focused on secure data gathering and research
-
-## Prerequisites
-
-- Node.js 16+
-- TypeScript 4.5+
-- AZTP API Key
-- OpenAI API Key
-
-## Identity Configuration
-
-Create a `.env` file with required API keys:
-```env
-OPENAI_API_KEY=your_openai_api_key
 AZTP_API_KEY=your_aztp_api_key
-AZTP_ENVIRONMENT=production
-```
-
-## AZTP Identity Implementation
-
-### 1. Initialize AZTP Client
-
-```typescript
-import aztp from 'aztp-client';
-
-const client = aztp.initialize({
-    apiKey: process.env.AZTP_API_KEY
-});
-```
-
-### 2. Establish Global Identity
-
-```typescript
-// Blog agent with global identity
-const securedBlog = await client.secureConnect(blogAgent, {
-    agentName: "blog-writer-1",  // Unique global identifier
-    isGlobalIdentity: true       // Automatically uses aztp.network as trust domain
-});
-```
-
-### 3. Create Child Identity
-
-```typescript
-// Research agent with child identity
-const securedResearch = await client.secureConnect(researchAgent, {
-    agentName: "research-assistant-1",           // Unique child identifier
-    parentIdentity: securedBlog.identity.aztpId, // Link to parent's AZTP ID
-    trustDomain: "astha.ai",                     // Custom trust domain
-    isGlobalIdentity: false                      // Operates under parent's domain
-});
-```
-
-### 4. Identity Verification
-
-```typescript
-// Verify child identity with parent
-const isValid = await securedBlog.verifyIdentity(securedResearch.identity);
-
-if (!isValid) {
-    throw new Error("Invalid child identity");
-}
-```
-
-## Security Features
-
-1. **Zero Trust Architecture**
-   - Every agent must prove identity for each operation
-   - No implicit trust between agents
-   - Cryptographic verification of all communications
-
-2. **Identity Hierarchy**
-   - Clear parent-child relationships
-   - Scoped permissions and access control
-   - Trust domain isolation
-
-3. **Secure Communication**
-   - End-to-end encrypted messages
-   - Identity-based message signing
-   - Tamper-proof data exchange
-
-## Best Practices
-
-1. **Identity Naming**
-   - Use unique, descriptive agent names
-   - Follow a consistent naming convention
-   - Avoid reusing identity names
-
-2. **Trust Domain Management**
-   - Keep global identities minimal
-   - Group related agents under same trust domain
-   - Regularly rotate identity credentials
-
-3. **Error Handling**
-   - Always verify identity before operations
-   - Handle identity verification failures gracefully
-   - Log identity-related events for audit
-
-## Installation
-
-1. Clone the repository and navigate to the project directory:
-```bash
-cd aztp_examples/blog_ts
+OPENAI_API_KEY=your_openai_api_key
 ```
 
 2. Install dependencies:
@@ -134,48 +36,55 @@ cd aztp_examples/blog_ts
 npm install
 ```
 
-## Configuration
+## Usage
 
-Create a `.env` file in the project root:
-```env
-OPENAI_API_KEY=your_openai_api_key
-AZTP_API_KEY=your_aztp_api_key
-AZTP_ENVIRONMENT=production
+Run the example:
+```bash
+npm run dev
 ```
 
-## AZTP Integration Guide
+This will:
+1. Initialize and secure all components with AZTP
+2. Conduct research on a topic
+3. Generate a blog post
+4. Save the post to local storage
+5. List all available blog posts
 
-### Initializing AZTP Client
+## Blog Post Format
 
-```typescript
-import aztp from 'aztp-client';
+Each blog post is saved with the following structure:
+```markdown
+---
+title: Post Title
+author: Blog Agent
+researcher: Research Agent
+date: 2024-02-15T10:30:45.123Z
+status: completed
+---
 
-const client = aztp.initialize({
-    apiKey: process.env.AZTP_API_KEY
-});
+Blog content here...
 ```
 
-### Securing Agents with AZTP
+## Directory Structure
 
-The `secureConnect` method is used to establish secure identities for agents. Here are the two main patterns:
-
-1. **Global Identity** (for root-level agents):
-```typescript
-// Blog agent as global identity
-const securedBlog = await client.secureConnect(blogAgent, {
-    agentName: "blog-writer-1",  // Make sure this is unique. If you get an error about the agent name, change it.
-                                // Since this example is run multiple times by many people, using the same agent name will cause an error.
-    isGlobalIdentity: true      // Automatically uses aztp.network as trust domain, no need to specify trustDomain
-});
+```
+.
+├── src/
+│   ├── agents/
+│   │   ├── research-agent.ts
+│   │   └── blog-agent.ts
+│   ├── services/
+│   │   └── storage.ts
+│   └── main.ts
+├── blogs/           # Generated blog posts are stored here
+├── .env
+└── README.md
 ```
 
-2. **Child Identity** (for agents under a trust domain):
-```typescript
-// Research agent as child with trust domain
-const securedResearch = await client.secureConnect(researchAgent, {
-    agentName: "research-assistant-1",  // Make sure this is unique, just like the parent agent name
-    parentIdentity: securedBlog.identity.aztpId,  // Link to parent
-    trustDomain: "astha.ai",  // Explicit trust domain required for child identities
-    isGlobalIdentity: false
-});
-```
+## Error Handling
+
+The system includes comprehensive error handling for:
+- Missing API keys
+- Failed trust chain verification
+- Storage operation failures
+- Broken connections between components

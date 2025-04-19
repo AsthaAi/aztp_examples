@@ -30,7 +30,7 @@ async function main() {
         // First, secure the research agent
         console.log("\n1. Securing Research Agent");
         const securedResearchAgent = await aztpClient.secureConnect(
-            researchAgent.getMetadata(),
+            researchAgent,
             "ResearchAgent-Hackathon",
             { 
                 isGlobalIdentity: false,
@@ -42,7 +42,7 @@ async function main() {
         // Then, secure the blog agent and link it to research agent
         console.log("\n2. Securing Blog Agent");
         const securedBlogAgent = await aztpClient.secureConnect(
-            blogAgent.getMetadata(),
+            blogAgent,
             "BlogAgent-Hackathon",
             {
                 isGlobalIdentity: false,
@@ -56,7 +56,7 @@ async function main() {
         // Update research agent with blog agent link
         console.log("\n3. Updating Research Agent with Blog Agent link");
         const updatedResearchAgent = await aztpClient.secureConnect(
-            researchAgent.getMetadata(),
+            researchAgent,
             "ResearchAgent-Hackathon",
             { 
                 isGlobalIdentity: false,
@@ -69,7 +69,7 @@ async function main() {
         // Secure the storage service
         console.log("\n4. Securing Storage Service");
         const securedStorage = await aztpClient.secureConnect(
-            storage.getMetadata(),
+            storage,
             "StorageService-Hackathon",
             {
                 isGlobalIdentity: false,
@@ -83,7 +83,7 @@ async function main() {
         // Update blog agent to link with storage service
         console.log("\n5. Updating Blog Agent with Storage Service link");
         const updatedBlogAgent = await aztpClient.secureConnect(
-            blogAgent.getMetadata(),
+            blogAgent,
             "BlogAgent-Hackathon",
             {
                 isGlobalIdentity: false,
