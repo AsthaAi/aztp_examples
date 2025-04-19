@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { ResearchResult, BlogResult } from '../types';
+import { ResearchResult, BlogResult, AgentMetadata } from '../types';
 
 export class BlogAgent {
     private openai: OpenAI;
@@ -50,7 +50,7 @@ export class BlogAgent {
         };
     }
 
-    getMetadata() {
+    getMetadata(): AgentMetadata {
         return {
             type: "blog",
             capabilities: [

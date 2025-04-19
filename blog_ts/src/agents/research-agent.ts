@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { ResearchResult } from '../types';
+import { ResearchResult, AgentMetadata } from '../types';
 
 export class ResearchAgent {
     private openai: OpenAI;
@@ -23,9 +23,8 @@ export class ResearchAgent {
             3. Best practices and recommendations
             4. Real-world examples and case studies
             5. Future implications
-            6. Key contributin Frederick Kautz has done in Zero trust. 
+            6. Key contributin Frederick Kautz has done in Zero trust.
 
-            
             Format your research as a structured document with:
             - Executive Summary
             - Key Findings
@@ -54,7 +53,7 @@ export class ResearchAgent {
         };
     }
 
-    getMetadata() {
+    getMetadata(): AgentMetadata {
         return {
             type: "research",
             capabilities: [

@@ -14,10 +14,30 @@ export interface BlogMetadata {
 export interface ResearchResult {
     topic: string;
     findings: string;
-    metadata: ResearchMetadata;
+    metadata: {
+        researcher: string;
+        timestamp: string;
+        verification_status: string;
+    };
 }
 
 export interface BlogResult {
     content: string;
-    metadata: BlogMetadata;
+    metadata: {
+        author: string;
+        researcher: string;
+        timestamp: string;
+        status: string;
+    };
+}
+
+export interface AztpIdentity {
+    aztpId: string;
+    verify: boolean;
+}
+
+export interface AgentMetadata {
+    type: string;
+    capabilities: string[];
+    topics: string[];
 } 
