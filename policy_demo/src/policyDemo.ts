@@ -42,11 +42,11 @@ async function main() {
       console.log("\nPolicy Statement:", policy.policyStatement);
       if (policy.policyStatement.Statement[0].Effect === "Allow") {
         console.log(
-          "Statement Effect:",
+          "Statement Effects:",
           policy.policyStatement.Statement[0].Effect
         );
         console.log(
-          "Statement Actions:",
+          "Statement Actions1:",
           policy.policyStatement.Statement[0].Action
         );
         if (policy.policyStatement.Statement[0].Condition) {
