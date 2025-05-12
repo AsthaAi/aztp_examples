@@ -29,36 +29,64 @@ async def main():
         secured_agent = await client.secure_connect(
             crew_agent,
             agent_name,
-            {
-                "isGlobalIdentity": True
-            }
+            {"isGlobalIdentity": True}
         )
-        print("AZTP ID:", secured_agent)
+        print("AZTP ID:", getattr(secured_agent.identity, 'aztp_id', secured_agent))
+
+        # Verify the identity
+        print(f"2. Verifying identity for agent: {agent_name}")
+        verified_agent = await client.verify_identity(secured_agent)
+        print("Verified Agent:", verified_agent)
+
+        # Revoke the identity
+        print(f"3. Revoking identity for agent: {agent_name}")
+        revoke_result = await client.revoke_identity(
+            secured_agent.identity.aztp_id,
+            "Temporary Revocation"
+        )
+        print("Revoked Agent:", revoke_result)
+
+        # Verify after revoke
+        print(f"4. Verifying identity after revocation for agent: {agent_name}")
+        is_valid_after_revoke = await client.verify_identity(secured_agent)
+        print("Identity Valid After Revoke:", is_valid_after_revoke)
+
+        # Reissue the identity
+        print(f"5. Reissuing identity for agent: {agent_name}")
+        reissue_result = await client.reissue_identity(
+            secured_agent.identity.aztp_id
+        )
+        print("Identity Reissued:", reissue_result)
+
+        # Verify after reissue
+        print(f"6. Verifying identity after reissue for agent: {agent_name}")
+        is_valid_after_reissue = await client.verify_identity(secured_agent)
+        print("Identity Valid After Reissue:", is_valid_after_reissue)
 
         # Get and display policy information
-        print(f"\n2. Getting policy information for agent: {agent_name}")
+        print(f"\n7. Getting policy information for agent: {agent_name}")
         identity_access_policy = await client.get_policy(
             secured_agent.identity.aztp_id
         )
 
-        # Display policy information
-        print("\nPolicy Information:")
-        if isinstance(identity_access_policy, dict):
-            # Handle dictionary response
-            for policy in identity_access_policy.get('data', []):
-                print("\nPolicy Statement:", policy.get('policyStatement'))
-                statement = policy.get('policyStatement', {}).get(
-                    'Statement', [{}])[0]
-                if statement.get('Effect') == "Allow":
-                    print("Statement Effect:", statement.get('Effect'))
-                    print("Statement Actions:", statement.get('Action'))
-                    if 'Condition' in statement:
-                        print("Statement Conditions:",
-                              statement.get('Condition'))
-                    print("Identity:", policy.get('identity'))
+        # Extract a specific policy by code (replace with your actual policy code)
+        policy_code = "policy:9ca1aadf1964"  # Replace with your actual policy code
+        policy = client.get_policy_value(
+            identity_access_policy,
+            "code",
+            policy_code
+        )
+        print("\nPolicy:", policy)
+
+        if policy:
+            is_allow = client.is_action_allowed(policy, "list_users")
+            print({"is_allow": is_allow})
+            if is_allow:
+                print("Allowed to run the action")
+            else:
+                print("Not allowed to run the action")
         else:
-            # Handle string response
-            print(identity_access_policy)
+            print("Policy not found.")
 
     except Exception as error:
         print("Error:", error)
