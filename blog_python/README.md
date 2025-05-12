@@ -1,42 +1,48 @@
-# AZTP Blog Generation Example (Python)
+# Blog Generation with AZTP Trust Chain (Python)
 
-This example demonstrates how to use the AZTP (Agentic Zero Trust Protocol) to create a secure blog generation system with multiple collaborating agents.
+This example demonstrates how to create a secure blog generation system using AZTP (Astha Zero Trust Protocol) to establish trust between different components.
 
-## Project Overview
+## Components
 
+1. **Research Agent**: Conducts research on given topics using OpenAI's API
+2. **Blog Agent**: Creates blog posts based on research findings
+3. **Storage Service**: Manages local storage of blog posts in Markdown format
+
+## Trust Chain Architecture
+
+The system establishes a secure trust chain between components:
 
 ```
-┌──────────────┐                              ┌──────────────┐
-│  Research    │                              │    Blog      │
-│   Agent      │    Agentic Zero Trust       │   Agent      │
-│              │◄─────── Protocol ──────────►│              │
-│  (OpenAI)    │         (AZTP)              │  (OpenAI)    │
-└──────────────┘                              └──────────────┘
+Blog Agent (Global Identity)
+├── Research Agent (Child) ↔️ Blog Agent
+└── Storage Service (Child) ↔️ Blog Agent
 ```
-The project implements a secure blog generation system using two main agents:
-- **Blog Agent** (Global Identity): Responsible for creating and formatting blog posts
-- **Research Agent** (Child Identity): Handles research and data gathering for blog topics
 
-Both agents are secured using AZTP's identity and trust mechanisms, demonstrating proper hierarchical identity management and secure agent collaboration.
+All connections are bi-directional and verified before operations:
+- Research Agent ↔️ Blog Agent
+- Blog Agent ↔️ Storage Service
 
-## Prerequisites
+## Storage Implementation
 
-- Python 3.8+
-- Virtual environment (recommended)
-- AZTP API Key
-- OpenAI API Key
+The system stores blog posts locally with the following features:
+- Blog posts are saved as Markdown files with YAML frontmatter
+- Each file includes metadata (author, researcher, date, status)
+- Files are stored in a `blogs` directory in the project root
+- Filenames are generated using timestamps and sanitized titles
+- Example filename: `2024-02-15T10-30-45-123Z-zero-trust-architecture-in-ai-systems.md`
 
-## Installation
+## Setup
 
-1. Clone the repository and navigate to the project directory:
-```bash
-cd aztp_examples/blog_python
+1. Create a `.env` file with your API keys:
+```
+OPENAI_API_KEY=your_openai_api_key
+AZTP_API_KEY=your_aztp_api_key
 ```
 
 2. Create and activate a virtual environment:
 ```bash
-python -m venv blog-env
-source blog-env/bin/activate  # On Windows: blog-env\Scripts\activate
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 3. Install dependencies:
@@ -44,54 +50,78 @@ source blog-env/bin/activate  # On Windows: blog-env\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Configuration
+## Usage
 
-1. Create a `.env` file in the project root with the following variables:
-```env
-OPENAI_API_KEY=your_openai_api_key
-AZTP_API_KEY=your_aztp_api_key
-AZTP_ENVIRONMENT=production
+Run the example:
+```bash
+python src/main.py
 ```
 
-## AZTP Integration Guide
+This will:
+1. Initialize and secure all components with AZTP:
+   - Blog Agent as global identity
+   - Research Agent as child of Blog Agent
+   - Storage Service as child of Blog Agent
+2. Verify bi-directional trust between components
+3. Conduct research on a topic
+4. Generate a blog post
+5. Save the post to local storage
+6. List all available blog posts
 
-### Initializing AZTP Client
+## Blog Post Format
 
-```python
-from aztp_client import Aztp
+Each blog post is saved with the following structure:
+```markdown
+---
+title: Post Title
+author: Blog Agent
+researcher: Research Agent
+date: 2024-02-15T10:30:45.123Z
+status: completed
+---
 
-client = Aztp(
-    api_key=env['aztp_key']
-)
+Blog content here...
 ```
 
-### Securing Agents with AZTP
+## Directory Structure
 
-The `secure_connect` method is used to establish secure identities for agents. There are two main patterns:
-
-1. **Global Identity** (for root-level agents):
-```python
-# Blog agent as global identity
-secured_blog = await client.secure_connect(
-    blog_agent,
-    {
-        "agentName": "blog-writer-1",  # Make sure this is unique. If you get an error about the agent name, change it.
-                                      # Since this example is run multiple times by many people, using the same agent name will cause an error.
-        "isGlobalIdentity": True  # Uses aztp.network as a globaltrust domain
-    }
-)
+```
+.
+├── src/
+│   ├── agents/
+│   │   ├── research_agent.py
+│   │   └── blog_agent.py
+│   ├── services/
+│   │   └── storage.py
+│   └── main.py
+├── blogs/           # Generated blog posts are stored here
+├── requirements.txt
+├── .env
+└── README.md
 ```
 
-2. **Child Identity** (for agents under a trust domain):
-```python
-# Research agent as child with trust domain
-secured_research = await client.secure_connect(
-    research_agent,
-     "research-assistant-1"
-    {
-        "parentIdentity": secured_blog.identity.aztp_id,  # Link to parent
-        "trustDomain": "astha.ai",  # Explicit trust domain
-        "isGlobalIdentity": False
-    }
-)
-```
+## Error Handling
+
+The system includes comprehensive error handling for:
+- Missing API keys
+- Failed trust chain verification
+- Storage operation failures
+- Broken connections between components
+- Component verification failures
+
+## Connection Verification
+
+The system verifies:
+1. Component identities:
+   - Research Agent
+   - Blog Agent
+   - Storage Service
+
+2. Bi-directional connections:
+   - Research Agent → Blog Agent
+   - Blog Agent → Research Agent
+   - Blog Agent → Storage Service
+   - Storage Service → Blog Agent
+
+All verifications must pass before any operations are performed.
+
