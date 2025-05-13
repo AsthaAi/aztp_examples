@@ -29,11 +29,39 @@ async def main():
         secured_agent = await client.secure_connect(
             crew_agent,
             agent_name,
-            {
-                "isGlobalIdentity": True
-            }
+            {"isGlobalIdentity": True}
         )
-        print("AZTP ID:", secured_agent)
+        print("AZTP ID:", getattr(secured_agent.identity, 'aztp_id', secured_agent))
+
+        # Verify the identity
+        print(f"2. Verifying identity for agent: {agent_name}")
+        verified_agent = await client.verify_identity(secured_agent)
+        print("Verified Agent:", verified_agent)
+
+        # Revoke the identity
+        print(f"3. Revoking identity for agent: {agent_name}")
+        revoke_result = await client.revoke_identity(
+            secured_agent.identity.aztp_id,
+            "Temporary Revocation"
+        )
+        print("Revoked Agent:", revoke_result)
+
+        # Verify after revoke
+        print(f"4. Verifying identity after revocation for agent: {agent_name}")
+        is_valid_after_revoke = await client.verify_identity(secured_agent)
+        print("Identity Valid After Revoke:", is_valid_after_revoke)
+
+        # Reissue the identity
+        print(f"5. Reissuing identity for agent: {agent_name}")
+        reissue_result = await client.reissue_identity(
+            secured_agent.identity.aztp_id
+        )
+        print("Identity Reissued:", reissue_result)
+
+        # Verify after reissue
+        print(f"6. Verifying identity after reissue for agent: {agent_name}")
+        is_valid_after_reissue = await client.verify_identity(secured_agent)
+        print("Identity Valid After Reissue:", is_valid_after_reissue)
 
         # Verify the identity
         print(f"2. Verifying identity for agent: {agent_name}")
