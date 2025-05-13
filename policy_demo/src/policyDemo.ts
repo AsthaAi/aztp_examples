@@ -76,7 +76,7 @@ async function main() {
     const policy = aztpClient.getPolicyValue(
       identityAccessPolicy.data,
       "code",
-      "policy:9ca1aadf1964"
+      "policy:12f91570ac96"
     );
 
     console.log("\nPolicy:", policy);
